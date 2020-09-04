@@ -343,7 +343,7 @@ Port Type: Micro USB (ChameleonMini) / Type-C (ChameleonTiny)
 Repository Structure
 --------------------
 The code repository contains
-* Doc: A doxygen documentation 
+* Doc: A doxygen documentation
 * Drivers: Chameleon drivers for Windows and Linux
 * Dumps: Dumps of different smartcards
 * Hardware: The layout and schematics of the PCB
