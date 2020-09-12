@@ -16,6 +16,7 @@
 #include "../Battery.h"
 #include "../Codec/Codec.h"
 #include "uartcmd.h"
+#include "../Application/Reader14443A.h"
 
 extern Reader14443Command Reader14443CurrentCommand;
 extern Sniff14443Command Sniff14443CurrentCommand;
@@ -276,6 +277,23 @@ CommandStatusIdType CommandSetLedRed(char *OutMessage, const char *InParam) {
         return COMMAND_INFO_OK_WITH_TEXT_ID;
     } else if (LEDSetFuncByName(LED_RED, InParam)) {
         SettingsSave();
+        return COMMAND_INFO_OK_ID;
+    } else {
+        return COMMAND_ERR_INVALID_PARAM_ID;
+    }
+}
+
+CommandStatusIdType CommandGetPin(char *OutParam) {
+    PinGetFuncByName(OutParam, TERMINAL_BUFFER_SIZE);
+
+    return COMMAND_INFO_OK_WITH_TEXT_ID;
+}
+
+CommandStatusIdType CommandSetPin(char *OutMessage, const char *InParam) {
+    if (COMMAND_IS_SUGGEST_STRING(InParam)) {
+        PinGetFuncList(OutMessage, TERMINAL_BUFFER_SIZE);
+        return COMMAND_INFO_OK_WITH_TEXT_ID;
+    } else if (PinSetFuncByName(InParam)) {
         return COMMAND_INFO_OK_ID;
     } else {
         return COMMAND_ERR_INVALID_PARAM_ID;
