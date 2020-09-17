@@ -66,6 +66,14 @@ CommandStatusIdType CommandSetConfig(char *OutMessage, const char *InParam);
 CommandStatusIdType CommandGetUid(char *OutParam);
 CommandStatusIdType CommandSetUid(char *OutMessage, const char *InParam);
 
+#define COMMAND_ATQA                "ATQA"
+CommandStatusIdType CommandGetAtqa(char* OutParam);
+CommandStatusIdType CommandSetAtqa(char* OutMessage, const char* InParam);
+
+#define COMMAND_SAK                 "SAK"
+CommandStatusIdType CommandGetSak(char* OutParam);
+CommandStatusIdType CommandSetSak(char* OutMessage, const char* InParam);
+
 #define COMMAND_READONLY    "READONLY"
 CommandStatusIdType CommandGetReadOnly(char *OutParam);
 CommandStatusIdType CommandSetReadOnly(char *OutMessage, const char *InParam);

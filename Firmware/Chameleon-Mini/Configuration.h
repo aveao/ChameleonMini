@@ -13,6 +13,10 @@
 
 #define CONFIGURATION_NAME_LENGTH_MAX   32
 #define CONFIGURATION_UID_SIZE_MAX      16
+/* ATQA & SAK */
+#define CONFIGURATION_DUMMY_ATQA        0x0000
+#define CONFIGURATION_DUMMY_SAK         0x00
+
 
 typedef uint8_t ConfigurationUidType[CONFIGURATION_UID_SIZE_MAX];
 
@@ -138,6 +142,26 @@ typedef struct {
      * \param Uid	The source buffer.
      */
     void (*ApplicationSetUidFunc)(ConfigurationUidType Uid);
+    /**
+     * Writes the SAK for the current configuration to the given buffer.
+     * \param Sak	The target buffer.
+     */
+    void (*ApplicationGetSakFunc) (uint8_t * Sak);
+    /**
+     * Writes a given SAK to the current configuration.
+     * \param Sak	The source buffer.
+     */
+    void (*ApplicationSetSakFunc) (uint8_t Sak);
+    /**
+     * Writes the ATQA for the current configuration to the given buffer.
+     * \param Atqa	The target buffer.
+     */
+    void (*ApplicationGetAtqaFunc) (uint16_t * Atqa);
+    /**
+     * Writes a given ATQA to the current configuration.
+     * \param Atqa	The source buffer.
+     */
+    void (*ApplicationSetAtqaFunc) (uint16_t Atqa);
     /**
      * @}
      */

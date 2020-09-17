@@ -62,6 +62,20 @@ const PROGMEM CommandEntryType CommandTable[] = {
         .GetFunc    = CommandGetUid
     },
     {
+        .Command    = COMMAND_ATQA,
+        .ExecFunc   = NO_FUNCTION,
+        .ExecParamFunc = NO_FUNCTION,
+        .SetFunc    = CommandSetAtqa,
+        .GetFunc    = CommandGetAtqa
+    },
+    {
+        .Command    = COMMAND_SAK,
+        .ExecFunc   = NO_FUNCTION,
+        .ExecParamFunc = NO_FUNCTION,
+        .SetFunc    = CommandSetSak,
+        .GetFunc    = CommandGetSak
+    },
+    {
         .Command    = COMMAND_READONLY,
         .ExecFunc   = NO_FUNCTION,
         .ExecParamFunc = NO_FUNCTION,
