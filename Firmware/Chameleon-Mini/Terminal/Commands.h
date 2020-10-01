@@ -174,9 +174,6 @@ CommandStatusIdType CommandExecGetUid(char *OutMessage);
 #define COMMAND_DUMP_MFU	"DUMP_MFU"
 CommandStatusIdType CommandExecDumpMFU(char *OutMessage);
 
-#define COMMAND_CLONE_MFU	"CLONE_MFU"
-CommandStatusIdType CommandExecCloneMFU(char *OutMessage);
-
 #define COMMAND_IDENTIFY_CARD	"IDENTIFY"
 CommandStatusIdType CommandExecIdentifyCard(char *OutMessage);
 

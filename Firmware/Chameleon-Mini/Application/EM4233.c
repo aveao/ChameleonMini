@@ -23,6 +23,9 @@ static enum {
 } State;
 
 bool loggedIn;
+uint8_t MyAFI; /* This variable holds current tag's AFI (is used in inventory) */
+
+CurrentFrame FrameInfo;
 
 void EM4233AppInit(void) {
     State = STATE_READY;
@@ -35,7 +38,7 @@ void EM4233AppInit(void) {
     FrameInfo.Selected      = false;
     loggedIn = false;
     MemoryReadBlock(&MyAFI, EM4233_MEM_AFI_ADDRESS, 1);
-    MemoryReadBlock(&Uid, EM4233_MEM_UID_ADDRESS, ActiveConfiguration.UidSize);
+
 }
 
 void EM4233AppReset(void) {
@@ -48,8 +51,6 @@ void EM4233AppReset(void) {
     FrameInfo.Addressed     = false;
     FrameInfo.Selected      = false;
     loggedIn = false;
-    MemoryReadBlock(&MyAFI, EM4233_MEM_AFI_ADDRESS, 1);
-    MemoryReadBlock(&Uid, EM4233_MEM_UID_ADDRESS, ActiveConfiguration.UidSize);
 }
 
 void EM4233AppTask(void) {
@@ -61,7 +62,7 @@ void EM4233AppTick(void) {
 }
 
 uint16_t EM4233_Lock_Block(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     uint8_t BlockAddress = *FrameInfo.Parameters;
     uint8_t LockStatus = 0;
 
@@ -91,7 +92,7 @@ uint16_t EM4233_Lock_Block(uint8_t *FrameBuf, uint16_t FrameBytes) {
 }
 
 uint16_t EM4233_Write_Single(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     uint8_t BlockAddress = *FrameInfo.Parameters;
     uint8_t *Dataptr = FrameInfo.Parameters + 0x01; /* Data to write begins on 2nd byte of the frame received by the reader */
     uint8_t LockStatus = 0;
@@ -126,7 +127,7 @@ uint16_t EM4233_Write_Single(uint8_t *FrameBuf, uint16_t FrameBytes) {
 }
 
 uint16_t EM4233_Read_Single(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     uint8_t FramePtr; /* holds the address where block's data will be put */
     uint8_t BlockAddress = FrameInfo.Parameters[0];
     uint8_t LockStatus = 0;
@@ -137,7 +138,7 @@ uint16_t EM4233_Read_Single(uint8_t *FrameBuf, uint16_t FrameBytes) {
     if (BlockAddress >= EM4233_NUMBER_OF_BLCKS) { /* check if the reader is requesting a sector out of bound */
         if (FrameInfo.Addressed) { /* If the request is addressed */
             FrameBuf[ISO15693_ADDR_FLAGS] = ISO15693_RES_FLAG_ERROR;
-            FrameBuf[ISO15693_RES_ADDR_PARAM] = ISO15693_RES_ERR_GENERIC;
+            FrameBuf[ISO15693_RES_ADDR_PARAM] = 0x0F; /* Magic number from real tag */
             ResponseByteCount += 2; /* Copied this behaviour from real tag, not specified in ISO documents */
         }
         return ResponseByteCount; /* If not addressed real tag does not respond */
@@ -167,7 +168,7 @@ uint16_t EM4233_Read_Single(uint8_t *FrameBuf, uint16_t FrameBytes) {
 }
 
 uint16_t EM4233_Read_Multiple(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     uint8_t FramePtr; /* holds the address where block's data will be put */
     uint8_t BlockAddress = FrameInfo.Parameters[0];
     uint8_t BlocksNumber = FrameInfo.Parameters[1] + 0x01; /* according to ISO standard, we have to read 0x08 blocks if we get 0x07 in request */
@@ -178,7 +179,7 @@ uint16_t EM4233_Read_Multiple(uint8_t *FrameBuf, uint16_t FrameBytes) {
     if (BlockAddress >= EM4233_NUMBER_OF_BLCKS) { /* the reader is requesting a block out of bound */
         if (FrameInfo.Addressed) { /* If the request is addressed */
             FrameBuf[ISO15693_ADDR_FLAGS] = ISO15693_RES_FLAG_ERROR;
-            FrameBuf[ISO15693_RES_ADDR_PARAM] = ISO15693_RES_ERR_GENERIC;
+            FrameBuf[ISO15693_RES_ADDR_PARAM] = 0x0F; /* Magic number from real tag */
             ResponseByteCount += 2; /* Copied this behaviour from real tag, not specified in ISO documents */
         }
         return ResponseByteCount; /* If not addressed real tag does not respond */
@@ -223,7 +224,7 @@ uint16_t EM4233_Read_Multiple(uint8_t *FrameBuf, uint16_t FrameBytes) {
 }
 
 uint16_t EM4233_Write_AFI(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     uint8_t AFI = FrameInfo.Parameters[0];
     uint8_t LockStatus = 0;
 
@@ -250,7 +251,7 @@ uint16_t EM4233_Write_AFI(uint8_t *FrameBuf, uint16_t FrameBytes) {
 }
 
 uint16_t EM4233_Lock_AFI(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     uint8_t LockStatus = 0;
 
     if (FrameInfo.ParamLen != 0)
@@ -277,7 +278,7 @@ uint16_t EM4233_Lock_AFI(uint8_t *FrameBuf, uint16_t FrameBytes) {
 }
 
 uint16_t EM4233_Write_DSFID(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     uint8_t DSFID = FrameInfo.Parameters[0];
     uint8_t LockStatus = 0;
 
@@ -303,7 +304,7 @@ uint16_t EM4233_Write_DSFID(uint8_t *FrameBuf, uint16_t FrameBytes) {
 }
 
 uint16_t EM4233_Lock_DSFID(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     uint8_t LockStatus = 0;
 
     if (FrameInfo.ParamLen != 0)
@@ -330,7 +331,7 @@ uint16_t EM4233_Lock_DSFID(uint8_t *FrameBuf, uint16_t FrameBytes) {
 }
 
 uint8_t EM4233_Get_SysInfo(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     uint8_t FramePtr; /* holds the address where block's data will be put */
 
     if (FrameInfo.ParamLen != 0)
@@ -353,6 +354,8 @@ uint8_t EM4233_Get_SysInfo(uint8_t *FrameBuf, uint16_t FrameBytes) {
     ResponseByteCount += 1;    /* Increment the response count */
 
     /* Then append UID */
+    uint8_t Uid[ActiveConfiguration.UidSize];
+    EM4233GetUid(Uid);
     ISO15693CopyUid(&FrameBuf[FramePtr], Uid);
     FramePtr += ISO15693_GENERIC_UID_SIZE;             /* Move forward the buffer data pointer */
     ResponseByteCount += ISO15693_GENERIC_UID_SIZE;    /* Increment the response count */
@@ -395,7 +398,7 @@ uint8_t EM4233_Get_SysInfo(uint8_t *FrameBuf, uint16_t FrameBytes) {
 }
 
 uint16_t EM4233_Get_Multi_Block_Sec_Stat(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     uint8_t FramePtr; /* holds the address where block's data will be put */
     uint8_t BlockAddress = FrameInfo.Parameters[0];
     uint8_t BlocksNumber = FrameInfo.Parameters[1] + 0x01;
@@ -424,7 +427,7 @@ uint16_t EM4233_Get_Multi_Block_Sec_Stat(uint8_t *FrameBuf, uint16_t FrameBytes)
 }
 
 uint16_t EM4233_Select(uint8_t *FrameBuf, uint16_t FrameBytes, uint8_t *Uid) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     /* I've no idea how this request could generate errors ._.
     if ( ) {
         FrameBuf[ISO15693_ADDR_FLAGS] = ISO15693_RES_FLAG_ERROR;
@@ -460,7 +463,7 @@ uint16_t EM4233_Select(uint8_t *FrameBuf, uint16_t FrameBytes, uint8_t *Uid) {
 }
 
 uint16_t EM4233_Reset_To_Ready(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     /* I've no idea how this request could generate errors ._.
     if ( ) {
         FrameBuf[ISO15693_ADDR_FLAGS] = ISO15693_RES_FLAG_ERROR;
@@ -484,7 +487,7 @@ uint16_t EM4233_Reset_To_Ready(uint8_t *FrameBuf, uint16_t FrameBytes) {
 }
 
 uint16_t EM4233_Login(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     uint8_t Password[4] = { 0 };
 
     if (FrameInfo.ParamLen != 4 || !FrameInfo.Addressed || !(FrameInfo.Selected && State == STATE_SELECTED))
@@ -520,7 +523,7 @@ uint16_t EM4233_Login(uint8_t *FrameBuf, uint16_t FrameBytes) {
 }
 
 uint16_t EM4233_Auth1(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     // uint8_t KeyNo = *FrameInfo.Parameters; /* Right now this parameter is unused, but it will be useful */
 
     if (FrameInfo.ParamLen != 1) /* Malformed: not enough or too much data */
@@ -545,7 +548,7 @@ uint16_t EM4233_Auth1(uint8_t *FrameBuf, uint16_t FrameBytes) {
 }
 
 uint16_t EM4233_Auth2(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
     // uint8_t A2 = FrameInfo.Parameters;
     // uint8_t f = FrameInfo.Parameters + 0x08;
     // uint8_t g[3] = { 0 }; /* Names according to EM Marin definitions */
@@ -563,7 +566,9 @@ uint16_t EM4233_Auth2(uint8_t *FrameBuf, uint16_t FrameBytes) {
 }
 
 uint16_t EM4233AppProcess(uint8_t *FrameBuf, uint16_t FrameBytes) {
-    ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint16_t ResponseByteCount = ISO15693_APP_NO_RESPONSE;
+    uint8_t Uid[ActiveConfiguration.UidSize];
+    EM4233GetUid(Uid);
 
     if ((FrameBytes < ISO15693_MIN_FRAME_SIZE) || !ISO15693CheckCRC(FrameBuf, FrameBytes - ISO15693_CRC16_SIZE))
         /* malformed frame */
@@ -580,8 +585,8 @@ uint16_t EM4233AppProcess(uint8_t *FrameBuf, uint16_t FrameBytes) {
         return ISO15693_APP_NO_RESPONSE;
 
     if (State == STATE_READY || State == STATE_SELECTED) {
-        switch (*FrameInfo.Command) {
-        case ISO15693_CMD_INVENTORY:
+
+        if (*FrameInfo.Command == ISO15693_CMD_INVENTORY) {
             if (FrameInfo.ParamLen == 0)
                 return ISO15693_APP_NO_RESPONSE; /* malformed: not enough or too much data */
 
@@ -591,82 +596,70 @@ uint16_t EM4233AppProcess(uint8_t *FrameBuf, uint16_t FrameBytes) {
                 ISO15693CopyUid(&FrameBuf[ISO15693_RES_ADDR_PARAM + 0x01], Uid);
                 ResponseByteCount += 10;
             }
-            break;
 
-        case ISO15693_CMD_STAY_QUIET:
-            if (FrameInfo.Addressed)
-                State = STATE_QUIET;
-            break;
+        } else if ((*FrameInfo.Command == ISO15693_CMD_STAY_QUIET) && FrameInfo.Addressed) {
+            State = STATE_QUIET;
 
-        case ISO15693_CMD_READ_SINGLE:
+        } else if (*FrameInfo.Command == ISO15693_CMD_READ_SINGLE) {
             ResponseByteCount = EM4233_Read_Single(FrameBuf, FrameBytes);
-            break;
 
-        case ISO15693_CMD_WRITE_SINGLE:
+        } else if (*FrameInfo.Command == ISO15693_CMD_WRITE_SINGLE) {
             ResponseByteCount = EM4233_Write_Single(FrameBuf, FrameBytes);
-            break;
 
-        case ISO15693_CMD_LOCK_BLOCK:
+        } else if (*FrameInfo.Command == ISO15693_CMD_LOCK_BLOCK) {
             ResponseByteCount = EM4233_Lock_Block(FrameBuf, FrameBytes);
-            break;
 
-        case ISO15693_CMD_READ_MULTIPLE:
+        } else if (*FrameInfo.Command == ISO15693_CMD_READ_MULTIPLE) {
             ResponseByteCount = EM4233_Read_Multiple(FrameBuf, FrameBytes);
-            break;
 
-        case ISO15693_CMD_WRITE_AFI:
+        } else if (*FrameInfo.Command == ISO15693_CMD_WRITE_AFI) {
             ResponseByteCount = EM4233_Write_AFI(FrameBuf, FrameBytes);
-            break;
 
-        case ISO15693_CMD_LOCK_AFI:
+        } else if (*FrameInfo.Command == ISO15693_CMD_LOCK_AFI) {
             ResponseByteCount = EM4233_Lock_AFI(FrameBuf, FrameBytes);
-            break;
 
-        case ISO15693_CMD_WRITE_DSFID:
+        } else if (*FrameInfo.Command == ISO15693_CMD_WRITE_DSFID) {
             ResponseByteCount = EM4233_Write_DSFID(FrameBuf, FrameBytes);
-            break;
 
-        case ISO15693_CMD_LOCK_DSFID:
+        } else if (*FrameInfo.Command == ISO15693_CMD_LOCK_DSFID) {
             ResponseByteCount = EM4233_Lock_DSFID(FrameBuf, FrameBytes);
-            break;
 
-        case ISO15693_CMD_GET_SYS_INFO:
+        } else if (*FrameInfo.Command == ISO15693_CMD_GET_SYS_INFO) {
             ResponseByteCount = EM4233_Get_SysInfo(FrameBuf, FrameBytes);
-            break;
 
-        case ISO15693_CMD_GET_BLOCK_SEC:
+        } else if (*FrameInfo.Command == ISO15693_CMD_GET_BLOCK_SEC) {
             ResponseByteCount = EM4233_Get_Multi_Block_Sec_Stat(FrameBuf, FrameBytes);
-            break;
 
-        case ISO15693_CMD_RESET_TO_READY:
+        } else if (*FrameInfo.Command == ISO15693_CMD_RESET_TO_READY) {
             ResponseByteCount = EM4233_Reset_To_Ready(FrameBuf, FrameBytes);
-            break;
 
-        case EM4233_CMD_LOGIN:
+        } else if (*FrameInfo.Command == EM4233_CMD_LOGIN) {
             ResponseByteCount = EM4233_Login(FrameBuf, FrameBytes);
-            break;
 
-        case EM4233_CMD_AUTH1:
+        } else if (*FrameInfo.Command == EM4233_CMD_AUTH1) {
             ResponseByteCount = EM4233_Auth1(FrameBuf, FrameBytes);
-            break;
 
-        case EM4233_CMD_AUTH2:
+        } else if (*FrameInfo.Command == EM4233_CMD_AUTH2) {
             ResponseByteCount = EM4233_Auth2(FrameBuf, FrameBytes);
-            break;
 
-        default:
+        } else {
             if (FrameInfo.Addressed) {
                 FrameBuf[ISO15693_ADDR_FLAGS] = ISO15693_RES_FLAG_ERROR;
                 FrameBuf[ISO15693_RES_ADDR_PARAM] = ISO15693_RES_ERR_NOT_SUPP;
                 ResponseByteCount = 2;
             } /* EM4233 respond with error flag only to addressed commands */
-            break;
-}
+        }
 
     } else if (State == STATE_QUIET) {
         if (*FrameInfo.Command == ISO15693_CMD_RESET_TO_READY) {
             ResponseByteCount = EM4233_Reset_To_Ready(FrameBuf, FrameBytes);
         }
+    }
+
+    if (ResponseByteCount > 0) {
+        /* There is data to send. Append CRC */
+        ISO15693AppendCRC(FrameBuf, ResponseByteCount);
+        ResponseByteCount += ISO15693_CRC16_SIZE;
     }
 
     return ResponseByteCount;
@@ -676,7 +669,6 @@ void EM4233GetUid(ConfigurationUidType Uid) {
     MemoryReadBlock(&Uid[0], EM4233_MEM_UID_ADDRESS, ActiveConfiguration.UidSize);
 }
 
-void EM4233SetUid(ConfigurationUidType NewUid) {
-    memcpy(Uid, NewUid, ActiveConfiguration.UidSize);
-    MemoryWriteBlock(NewUid, EM4233_MEM_UID_ADDRESS, ActiveConfiguration.UidSize);
+void EM4233SetUid(ConfigurationUidType Uid) {
+    MemoryWriteBlock(Uid, EM4233_MEM_UID_ADDRESS, ActiveConfiguration.UidSize);
 }

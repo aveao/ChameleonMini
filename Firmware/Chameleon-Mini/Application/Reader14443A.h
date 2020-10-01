@@ -6,8 +6,8 @@
 
 #define CRC_INIT 0x6363
 
-extern uint8_t ReaderSendBuffer[];
-extern uint16_t ReaderSendBitCount;
+uint8_t ReaderSendBuffer[CODEC_BUFFER_SIZE];
+uint16_t ReaderSendBitCount;
 
 void Reader14443AAppInit(void);
 void Reader14443AAppReset(void);
@@ -30,8 +30,7 @@ typedef enum {
     Reader14443_Autocalibrate,
     Reader14443_Read_MF_Ultralight,
     Reader14443_Identify,
-    Reader14443_Identify_Clone,
-    Reader14443_Clone_MF_Ultralight
+    Reader14443_Identify_Clone
 } Reader14443Command;
 
 

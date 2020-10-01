@@ -20,9 +20,6 @@
 
 // TODO replace remaining magic numbers
 
-uint8_t ReaderSendBuffer[CODEC_BUFFER_SIZE];
-uint16_t ReaderSendBitCount;
-
 static bool Selected = false;
 Reader14443Command Reader14443CurrentCommand = Reader14443_Do_Nothing;
 
@@ -687,7 +684,6 @@ uint16_t Reader14443AAppProcess(uint8_t *Buffer, uint16_t BitCount) {
             return rVal;
         }
 
-        case Reader14443_Clone_MF_Ultralight:
         case Reader14443_Read_MF_Ultralight: {
             static uint8_t MFURead_CurrentAdress = 0;
             static uint8_t MFUContents[64];
@@ -722,28 +718,18 @@ uint16_t Reader14443AAppProcess(uint8_t *Buffer, uint16_t BitCount) {
                 if (MFURead_CurrentAdress == 16) {
                     Selected = false;
                     MFURead_CurrentAdress = 0;
+                    Reader14443CurrentCommand = Reader14443_Do_Nothing;
 
-                    if (Reader14443CurrentCommand == Reader14443_Read_MF_Ultralight) { // dump
-                        Reader14443CurrentCommand = Reader14443_Do_Nothing;
-                        char tmpBuf[135]; // 135 = 128 hex digits + 3 * \r\n + \0
-                        BufferToHexString(tmpBuf, 							135, 							MFUContents, 16);
-                        snprintf(tmpBuf + 32, 						135 - 32, 						"\r\n");
-                        BufferToHexString(tmpBuf + 32 + 2, 					135 - 32 - 2, 					MFUContents + 16, 16);
-                        snprintf(tmpBuf + 32 + 2 + 32, 				135 - 32 - 2 - 32, 				"\r\n");
-                        BufferToHexString(tmpBuf + 32 + 2 + 32 + 2, 			135 - 32 - 2 - 32 - 2, 			MFUContents + 32, 16);
-                        snprintf(tmpBuf + 32 + 2 + 32 + 2 + 32, 		135 - 32 - 2 - 32 - 2 - 32, 	"\r\n");
-                        BufferToHexString(tmpBuf + 32 + 2 + 32 + 2 + 32 + 2, 	135 - 32 - 2 - 32 - 2 - 32 - 2, MFUContents + 48, 16);
-                        CodecReaderFieldStop();
-                        CommandLinePendingTaskFinished(COMMAND_INFO_OK_WITH_TEXT_ID, tmpBuf);
-                    } else { // clone
-                        Reader14443CurrentCommand = Reader14443_Do_Nothing;
-                        CodecReaderFieldStop();
-                        MemoryUploadBlock(&MFUContents, 0, 64);
-                        CommandLinePendingTaskFinished(COMMAND_INFO_OK_WITH_TEXT_ID, "Card Cloned to Slot");
-                        ConfigurationSetById(CONFIG_MF_ULTRALIGHT);
-                        MemoryStore();
-                        SettingsSave();
-                    }
+                    char tmpBuf[135]; // 135 = 128 hex digits + 3 * \r\n + \0
+                    BufferToHexString(tmpBuf, 							135, 							MFUContents, 16);
+                    snprintf(tmpBuf + 32, 						135 - 32, 						"\r\n");
+                    BufferToHexString(tmpBuf + 32 + 2, 					135 - 32 - 2, 					MFUContents + 16, 16);
+                    snprintf(tmpBuf + 32 + 2 + 32, 				135 - 32 - 2 - 32, 				"\r\n");
+                    BufferToHexString(tmpBuf + 32 + 2 + 32 + 2, 			135 - 32 - 2 - 32 - 2, 			MFUContents + 32, 16);
+                    snprintf(tmpBuf + 32 + 2 + 32 + 2 + 32, 		135 - 32 - 2 - 32 - 2 - 32, 	"\r\n");
+                    BufferToHexString(tmpBuf + 32 + 2 + 32 + 2 + 32 + 2, 	135 - 32 - 2 - 32 - 2 - 32 - 2, MFUContents + 48, 16);
+                    CodecReaderFieldStop();
+                    CommandLinePendingTaskFinished(COMMAND_INFO_OK_WITH_TEXT_ID, tmpBuf);
                     return 0;
                 }
                 Buffer[0] = 0x30; // MiFare Ultralight read command
@@ -817,17 +803,17 @@ uint16_t Reader14443AAppProcess(uint8_t *Buffer, uint16_t BitCount) {
                 if (CardCandidatesIdx == 1) {
                     int cfgid = -1;
                     switch (CardCandidates[0]) {
+#ifdef CONFIG_MF_ULTRALIGHT_SUPPORT
                         case CardType_NXP_MIFARE_Ultralight: {
                             cfgid = CONFIG_MF_ULTRALIGHT;
                             // TODO: enter MFU clone mdoe
                             break;
                         }
+#endif
                         case CardType_NXP_MIFARE_Classic_1k:
                         case CardType_Infineon_MIFARE_Classic_1k: {
                             if (CardCharacteristics.UIDSize == UIDSize_Single) {
-#ifdef CONFIG_MF_CLASSIC_1K_SUPPORT
                                 cfgid = CONFIG_MF_CLASSIC_1K;
-#endif
 #ifdef CONFIG_MF_CLASSIC_1K_7B_SUPPORT
                             } else if (CardCharacteristics.UIDSize == UIDSize_Double) {
                                 cfgid = CONFIG_MF_CLASSIC_1K_7B;
@@ -839,10 +825,8 @@ uint16_t Reader14443AAppProcess(uint8_t *Buffer, uint16_t BitCount) {
                         case CardType_Nokia_MIFARE_Classic_4k_emulated_6212:
                         case CardType_Nokia_MIFARE_Classic_4k_emulated_6131: {
                             if (CardCharacteristics.UIDSize == UIDSize_Single) {
-#ifdef CONFIG_MF_CLASSIC_4K_SUPPORT
                                 cfgid = CONFIG_MF_CLASSIC_4K;
-#endif
-#ifdef CONFIG_MF_CLASSIC_4K_7B_SUPPORT
+#ifdef CONFIG_MF_CLASSIC_1K_7B_SUPPORT
                             } else if (CardCharacteristics.UIDSize == UIDSize_Double) {
                                 cfgid = CONFIG_MF_CLASSIC_4K_7B;
 #endif

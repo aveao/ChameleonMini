@@ -16,7 +16,6 @@
 #include "../Battery.h"
 #include "../Codec/Codec.h"
 #include "uartcmd.h"
-#include "../Application/Reader14443A.h"
 
 extern Reader14443Command Reader14443CurrentCommand;
 extern Sniff14443Command Sniff14443CurrentCommand;
@@ -543,17 +542,6 @@ CommandStatusIdType CommandExecDumpMFU(char *OutMessage) {
     ApplicationReset();
 
     Reader14443CurrentCommand = Reader14443_Read_MF_Ultralight;
-    Reader14443AAppInit();
-    Reader14443ACodecStart();
-    CommandLinePendingTaskTimeout = &Reader14443AAppTimeout;
-    return TIMEOUT_COMMAND;
-}
-
-CommandStatusIdType CommandExecCloneMFU(char *OutMessage) {
-    ConfigurationSetById(CONFIG_ISO14443A_READER);
-    ApplicationReset();
-
-    Reader14443CurrentCommand = Reader14443_Clone_MF_Ultralight;
     Reader14443AAppInit();
     Reader14443ACodecStart();
     CommandLinePendingTaskTimeout = &Reader14443AAppTimeout;
